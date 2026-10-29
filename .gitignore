@@ -1,0 +1,17 @@
+# Build output
+Debug/
+Release/
+*.o
+*.d
+*.elf
+*.bin
+*.hex
+*.map
+*.list
+*.su
+*.cyclo
+
+# IDE settings
+.settings/
+*.launch
+.metadata/
