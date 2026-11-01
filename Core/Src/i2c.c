@@ -21,7 +21,13 @@
 #include "i2c.h"
 
 /* USER CODE BEGIN 0 */
+#define I2C_TIMEOUT 10000
 
+/* buffer used by the receive interrupt */
+static uint8_t *rx_buf;
+static uint8_t rx_len;
+static uint8_t rx_cnt;
+static volatile uint8_t rx_done;
 /* USER CODE END 0 */
 
 /* I2C1 init function */
@@ -82,6 +88,106 @@ void MX_I2C1_Init(void)
 }
 
 /* USER CODE BEGIN 1 */
+/* write len bytes starting at reg, one transfer */
+uint8_t i2c_write(uint8_t dev_addr, uint8_t reg, uint8_t *data, uint8_t len)
+{
+  uint32_t timeout;
+  uint8_t i;
 
+  LL_I2C_HandleTransfer(I2C1, dev_addr, LL_I2C_ADDRSLAVE_7BIT, len + 1,
+                        LL_I2C_MODE_AUTOEND, LL_I2C_GENERATE_START_WRITE);
+
+  timeout = I2C_TIMEOUT;
+  while (!LL_I2C_IsActiveFlag_TXIS(I2C1))
+  {
+    if (--timeout == 0) return 0;
+  }
+  LL_I2C_TransmitData8(I2C1, reg);
+
+  for (i = 0; i < len; i++)
+  {
+    timeout = I2C_TIMEOUT;
+    while (!LL_I2C_IsActiveFlag_TXIS(I2C1))
+    {
+      if (--timeout == 0) return 0;
+    }
+    LL_I2C_TransmitData8(I2C1, data[i]);
+  }
+
+  timeout = I2C_TIMEOUT;
+  while (!LL_I2C_IsActiveFlag_STOP(I2C1))
+  {
+    if (--timeout == 0) return 0;
+  }
+  LL_I2C_ClearFlag_STOP(I2C1);
+  return 1;
+}
+
+/* read len bytes starting at reg, register address and data in one
+   transfer separated by a repeated start, data received in the interrupt */
+uint8_t i2c_read(uint8_t dev_addr, uint8_t reg, uint8_t *data, uint8_t len)
+{
+  uint32_t timeout;
+
+  rx_buf = data;
+  rx_len = len;
+  rx_cnt = 0;
+  rx_done = 0;
+
+  /* send the register address, no stop at the end */
+  LL_I2C_HandleTransfer(I2C1, dev_addr, LL_I2C_ADDRSLAVE_7BIT, 1,
+                        LL_I2C_MODE_SOFTEND, LL_I2C_GENERATE_START_WRITE);
+
+  timeout = I2C_TIMEOUT;
+  while (!LL_I2C_IsActiveFlag_TXIS(I2C1))
+  {
+    if (--timeout == 0) return 0;
+  }
+  LL_I2C_TransmitData8(I2C1, reg);
+
+  timeout = I2C_TIMEOUT;
+  while (!LL_I2C_IsActiveFlag_TC(I2C1))
+  {
+    if (--timeout == 0) return 0;
+  }
+
+  /* repeated start and read all bytes */
+  LL_I2C_EnableIT_RX(I2C1);
+  LL_I2C_HandleTransfer(I2C1, dev_addr, LL_I2C_ADDRSLAVE_7BIT, len,
+                        LL_I2C_MODE_AUTOEND, LL_I2C_GENERATE_START_READ);
+
+  timeout = I2C_TIMEOUT;
+  while (!rx_done)
+  {
+    if (--timeout == 0)
+    {
+      LL_I2C_DisableIT_RX(I2C1);
+      return 0;
+    }
+  }
+  LL_I2C_DisableIT_RX(I2C1);
+
+  timeout = I2C_TIMEOUT;
+  while (!LL_I2C_IsActiveFlag_STOP(I2C1))
+  {
+    if (--timeout == 0) return 0;
+  }
+  LL_I2C_ClearFlag_STOP(I2C1);
+  return 1;
+}
+
+/* called from I2C1_EV_IRQHandler */
+void i2c_rx_irq(void)
+{
+  if (LL_I2C_IsActiveFlag_RXNE(I2C1))
+  {
+    rx_buf[rx_cnt] = LL_I2C_ReceiveData8(I2C1);
+    rx_cnt++;
+    if (rx_cnt == rx_len)
+    {
+      rx_done = 1;
+    }
+  }
+}
 /* USER CODE END 1 */
 
