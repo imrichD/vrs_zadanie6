@@ -209,7 +209,7 @@ void I2C1_EV_IRQHandler(void)
   /* USER CODE END I2C1_EV_IRQn 0 */
   /* USER CODE BEGIN I2C1_EV_IRQn 1 */
   i2c_rx_irq();
-/* USER CODE END I2C1_EV_IRQn 1 */
+  /* USER CODE END I2C1_EV_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

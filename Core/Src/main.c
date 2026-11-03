@@ -24,7 +24,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "hts221.h"
+#include "lps25hb.h"
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -51,7 +53,7 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
+static void send_measurements(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -98,7 +100,22 @@ int main(void)
   MX_I2C1_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  /* register the i2c functions as sensor callbacks */
+  hts221_set_io(i2c_read, i2c_write);
+  lps25hb_set_io(i2c_read, i2c_write);
 
+  if (!hts221_init())
+  {
+    usart2_send_string("HTS221 init failed\r\n");
+  }
+  if (!lps25hb_init())
+  {
+    usart2_send_string("LPS25HB init failed\r\n");
+  }
+
+  /* wait for the first measurement and take the altitude reference */
+  LL_mDelay(1200);
+  lps25hb_set_ref_pressure(lps25hb_get_pressure());
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -108,6 +125,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    send_measurements();
+    LL_mDelay(1000);
   }
   /* USER CODE END 3 */
 }
@@ -146,7 +165,34 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+/* one csv line: temperature,humidity,pressure,altitude */
+static void send_measurements(void)
+{
+  char buf[48];
+  int16_t t;
+  uint8_t h;
+  int32_t p;
+  int32_t a;
+  int ta;
+  int aa;
 
+  t = hts221_get_temperature();   /* 0.1 degC */
+  h = hts221_get_humidity();      /* % */
+  p = lps25hb_get_pressure();     /* 0.01 hPa */
+  a = lps25hb_get_altitude(p);    /* 0.01 m */
+
+  /* sign is printed separately so it is not lost on the fractional part */
+  ta = (t < 0) ? -t : t;
+  aa = (a < 0) ? -a : a;
+
+  sprintf(buf, "%s%d.%d,%u,%d.%02d,%s%d.%02d\r\n",
+          (t < 0) ? "-" : "", ta / 10, ta % 10,
+          (unsigned int)h,
+          (int)(p / 100), (int)(p % 100),
+          (a < 0) ? "-" : "", aa / 100, aa % 100);
+
+  usart2_send_string(buf);
+}
 /* USER CODE END 4 */
 
 /**
