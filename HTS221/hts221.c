@@ -62,6 +62,7 @@ static uint8_t read_calib(void)
 uint8_t hts221_init(void)
 {
   uint8_t id;
+  uint8_t av = HTS221_AVGT_16 | HTS221_AVGH_32;
   uint8_t cfg = HTS221_CTRL1_PD | HTS221_CTRL1_BDU | HTS221_CTRL1_ODR_1HZ;
 
   if (!hts221_read_reg(HTS221_WHO_AM_I, &id, 1))
@@ -69,6 +70,11 @@ uint8_t hts221_init(void)
     return 0;
   }
   if (id != HTS221_WHO_AM_I_VAL)
+  {
+    return 0;
+  }
+  /* priemerovanie sa nastavuje pred zapnutim senzora */
+  if (!hts221_write_reg(HTS221_AV_CONF, &av, 1))
   {
     return 0;
   }

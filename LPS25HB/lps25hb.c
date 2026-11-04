@@ -34,6 +34,7 @@ uint8_t lps25hb_write_reg(uint8_t reg, uint8_t *data, uint8_t len)
 uint8_t lps25hb_init(void)
 {
   uint8_t id;
+  uint8_t res = LPS25HB_AVGP_32 | LPS25HB_AVGT_16;
   uint8_t cfg = LPS25HB_CTRL1_PD | LPS25HB_CTRL1_ODR_1HZ | LPS25HB_CTRL1_BDU;
 
   if (!lps25hb_read_reg(LPS25HB_WHO_AM_I, &id, 1))
@@ -41,6 +42,11 @@ uint8_t lps25hb_init(void)
     return 0;
   }
   if (id != LPS25HB_WHO_AM_I_VAL)
+  {
+    return 0;
+  }
+  /* rozlisenie sa nastavuje pred zapnutim senzora */
+  if (!lps25hb_write_reg(LPS25HB_RES_CONF, &res, 1))
   {
     return 0;
   }

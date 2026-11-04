@@ -20,6 +20,8 @@
 #define HTS221_CTRL1_PD         0x80
 #define HTS221_CTRL1_BDU        0x04
 #define HTS221_CTRL1_ODR_1HZ    0x01
+#define HTS221_AVGT_16          0x18    /* 16 vzoriek priemerovanych */
+#define HTS221_AVGH_32          0x03    /* 32 vzoriek priemerovanych */
 
 #define HTS221_AUTO_INC         0x80    /* bit 7 of the register address */
 #define HTS221_CALIB_LEN        16

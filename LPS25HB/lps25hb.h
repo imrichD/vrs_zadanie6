@@ -19,6 +19,8 @@
 #define LPS25HB_CTRL1_PD        0x80
 #define LPS25HB_CTRL1_ODR_1HZ   0x10
 #define LPS25HB_CTRL1_BDU       0x04
+#define LPS25HB_AVGP_32         0x01    /* 32 vzoriek tlaku */
+#define LPS25HB_AVGT_16         0x04    /* 16 vzoriek teploty */
 
 #define LPS25HB_AUTO_INC        0x80    /* bit 7 of the register address */
 
