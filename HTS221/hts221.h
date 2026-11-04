@@ -30,7 +30,9 @@ void hts221_set_io(hts221_io_t read, hts221_io_t write);
 uint8_t hts221_init(void);
 uint8_t hts221_read_reg(uint8_t reg, uint8_t *data, uint8_t len);
 uint8_t hts221_write_reg(uint8_t reg, uint8_t *data, uint8_t len);
-int16_t hts221_get_temperature(void);   /* 0.1 degC */
-uint8_t hts221_get_humidity(void);      /* %rH */
+int16_t hts221_read_temperature_raw(void);
+int16_t hts221_read_humidity_raw(void);
+int16_t hts221_calc_temperature(int16_t raw);   /* 0.1 degC */
+uint8_t hts221_calc_humidity(int16_t raw);      /* %rH */
 
 #endif /* HTS221_H */

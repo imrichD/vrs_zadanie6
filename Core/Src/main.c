@@ -176,8 +176,8 @@ static void send_measurements(void)
   int ta;
   int aa;
 
-  t = hts221_get_temperature();   /* 0.1 degC */
-  h = hts221_get_humidity();      /* % */
+  t = hts221_calc_temperature(hts221_read_temperature_raw());   /* 0.1 degC */
+  h = hts221_calc_humidity(hts221_read_humidity_raw());         /* % */
   p = lps25hb_get_pressure();     /* 0.01 hPa */
   a = lps25hb_get_altitude(p);    /* 0.01 m */
 

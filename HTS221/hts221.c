@@ -79,29 +79,35 @@ uint8_t hts221_init(void)
   return read_calib();
 }
 
-int16_t hts221_get_temperature(void)
+int16_t hts221_read_temperature_raw(void)
 {
   uint8_t raw[2];
-  int16_t t_raw;
-  int32_t t_x8;
 
   hts221_read_reg(HTS221_TEMP_OUT_L, raw, 2);
-  t_raw = (int16_t)(raw[0] | (raw[1] << 8));
+  return (int16_t)(raw[0] | (raw[1] << 8));
+}
 
-  /* linear interpolation between the two calibration points */
-  t_x8 = t0_deg_x8 + ((int32_t)(t_raw - t0_out) * (t1_deg_x8 - t0_deg_x8)) / (t1_out - t0_out);
+int16_t hts221_read_humidity_raw(void)
+{
+  uint8_t raw[2];
+
+  hts221_read_reg(HTS221_HUMIDITY_OUT_L, raw, 2);
+  return (int16_t)(raw[0] | (raw[1] << 8));
+}
+
+/* linear interpolation between the two calibration points */
+int16_t hts221_calc_temperature(int16_t raw)
+{
+  int32_t t_x8;
+
+  t_x8 = t0_deg_x8 + ((int32_t)(raw - t0_out) * (t1_deg_x8 - t0_deg_x8)) / (t1_out - t0_out);
   return (int16_t)(t_x8 * 10 / 8);
 }
 
-uint8_t hts221_get_humidity(void)
+uint8_t hts221_calc_humidity(int16_t raw)
 {
-  uint8_t raw[2];
-  int16_t h_raw;
   int32_t h_x2;
 
-  hts221_read_reg(HTS221_HUMIDITY_OUT_L, raw, 2);
-  h_raw = (int16_t)(raw[0] | (raw[1] << 8));
-
-  h_x2 = h0_rh_x2 + ((int32_t)(h_raw - h0_t0_out) * (h1_rh_x2 - h0_rh_x2)) / (h1_t0_out - h0_t0_out);
+  h_x2 = h0_rh_x2 + ((int32_t)(raw - h0_t0_out) * (h1_rh_x2 - h0_rh_x2)) / (h1_t0_out - h0_t0_out);
   return (uint8_t)(h_x2 / 2);
 }
